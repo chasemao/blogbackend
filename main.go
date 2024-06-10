@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 
 	"github.com/chasemao/blogbackend/routers"
@@ -11,12 +10,17 @@ import (
 )
 
 func main() {
+	// initES()
+
 	router := gin.Default()
 	// 注册各个模块的路由
 	routers.RegisterUserRoutes(router)
 	// 启动Gin服务器
 	router.Run("localhost:6666")
 
+}
+
+func initES() {
 	// 设置 Elasticsearch 客户端
 	client, err := elastic.NewClient(elastic.SetURL("http://localhost:9200"), elastic.SetSniff(false))
 	if err != nil {
@@ -28,6 +32,5 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error pinging Elasticsearch: %s", err)
 	}
-	fmt.Printf("Elasticsearch returned with code %d and version %s\n", code, info.Version.Number)
-
+	log.Printf("Elasticsearch returned with code %d and version %s\n", code, info.Version.Number)
 }

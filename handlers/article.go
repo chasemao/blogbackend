@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"io/fs"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -11,7 +12,7 @@ import (
 )
 
 const (
-	artcileDir = "~/workspace/article"
+	artcileDir = "../article"
 )
 
 type ArticleLogic interface {
@@ -83,7 +84,7 @@ func (a *articleLogicImpl) readFileEntries() ([]fs.DirEntry, error) {
 }
 
 func (a *articleLogicImpl) buildErrorResp(c *gin.Context, code int, err error) {
-
+	log.Println("req=", c.Request, " err=", err)
 	c.JSON(code, errResp{ErrMsg: err.Error()})
 }
 
@@ -99,7 +100,7 @@ func (a *articleLogicImpl) convertToArticleEntries(fileEntries []fs.DirEntry) []
 }
 
 func (a *articleLogicImpl) getArticleFromDisk(file fs.DirEntry) (*article, error) {
-	contentBytes, err := os.ReadFile(artcileDir + file.Name())
+	contentBytes, err := os.ReadFile(artcileDir + "/" + file.Name())
 	if err != nil {
 		return nil, err
 	}
