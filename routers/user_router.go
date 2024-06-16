@@ -8,6 +8,6 @@ import (
 func RegisterUserRoutes(router *gin.Engine) {
 	articleLogic := handlers.NewArticleLogic()
 	userGroup := router.Group("/api/v1/article")
-	userGroup.GET("/list", articleLogic.ListArticles)
-	userGroup.GET("/:id", articleLogic.GetArticle)
+	userGroup.POST("/list", articleLogic.ListArticles)
+	userGroup.POST("/get", articleLogic.GetArticle)
 }

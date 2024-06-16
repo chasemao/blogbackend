@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -36,15 +35,16 @@ func (a *articleLogicImpl) ListArticles(c *gin.Context) {
 
 	articleEntries := a.convertToArticleEntries(fileEntries)
 
-	c.JSON(http.StatusOK, articleEntries)
+	c.JSON(http.StatusOK, &listArticleResp{
+		Data: articleEntries,
+	})
 }
 
 // GetArticle get a article detail
 func (a *articleLogicImpl) GetArticle(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
-	if err != nil {
-		a.buildErrorResp(c, http.StatusBadRequest, fmt.Errorf("invalid id=%v err=%v", idStr, err))
+	req := &getArticleReq{}
+	if err := c.BindJSON(req); err != nil {
+		a.buildErrorResp(c, http.StatusBadRequest, err)
 		return
 	}
 
@@ -53,11 +53,20 @@ func (a *articleLogicImpl) GetArticle(c *gin.Context) {
 		a.buildErrorResp(c, http.StatusInternalServerError, err)
 		return
 	}
-	if int(id) >= len(fileEntries) {
-		a.buildErrorResp(c, http.StatusBadRequest, fmt.Errorf("invalid id=%v err=%v", idStr, err))
+
+	var file fs.DirEntry
+	for _, entry := range fileEntries {
+		if entry.Name() == req.Title {
+			file = entry
+		}
+	}
+	if file == nil {
+		c.JSON(http.StatusOK, &getArticleResp{
+			Code: codeNotExistArticle,
+			Msg:  fmt.Sprintf("req article name=[%s] not exist", req.Title),
+		})
 		return
 	}
-	file := fileEntries[id]
 
 	article, err := a.getArticleFromDisk(file)
 	if err != nil {
@@ -65,7 +74,9 @@ func (a *articleLogicImpl) GetArticle(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, article)
+	c.JSON(http.StatusOK, &getArticleResp{
+		Data: article,
+	})
 }
 
 func (a *articleLogicImpl) readFileEntries() ([]fs.DirEntry, error) {
@@ -85,14 +96,16 @@ func (a *articleLogicImpl) readFileEntries() ([]fs.DirEntry, error) {
 
 func (a *articleLogicImpl) buildErrorResp(c *gin.Context, code int, err error) {
 	log.Println("req=", c.Request, " err=", err)
-	c.JSON(code, errResp{ErrMsg: err.Error()})
+	c.JSON(code, &errResp{
+		Code: code,
+		Msg:  err.Error(),
+	})
 }
 
 func (a *articleLogicImpl) convertToArticleEntries(fileEntries []fs.DirEntry) []*articleEntry {
 	var res []*articleEntry
-	for index, fileEntry := range fileEntries {
+	for _, fileEntry := range fileEntries {
 		res = append(res, &articleEntry{
-			ID:    index,
 			Title: fileEntry.Name(),
 		})
 	}
