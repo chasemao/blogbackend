@@ -2,15 +2,24 @@ package handlers
 
 const (
 	codeNotExistArticle = 100100
+	codeNotExistImage   = 100101
 )
 
 type articleEntry struct {
 	Title string `json:"title"`
+	CTime string `json:"ctime"`
 }
 
 type article struct {
-	Title   string `json:"title"`
+	Title string `json:"title"`
+	CTime string `json:"ctime"`
+
 	Content string `json:"content"`
+}
+
+type errResp struct {
+	Code int    `json:"code"`
+	Msg  string `json:"msg"`
 }
 
 type listArticleResp struct {
@@ -29,7 +38,6 @@ type getArticleResp struct {
 	Data *article `json:"data"`
 }
 
-type errResp struct {
-	Code int    `json:"code"`
-	Msg  string `json:"msg"`
+type getImageReq struct {
+	Image string `json:"image"`
 }

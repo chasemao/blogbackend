@@ -10,4 +10,6 @@ func RegisterUserRoutes(router *gin.Engine) {
 	userGroup := router.Group("/api/v1/article")
 	userGroup.POST("/list", articleLogic.ListArticles)
 	userGroup.POST("/get", articleLogic.GetArticle)
+	imageGroup := router.Group("/api/v1/image")
+	imageGroup.POST("/get", articleLogic.GetImage)
 }

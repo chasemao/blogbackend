@@ -6,17 +6,24 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 const (
-	artcileDir = "../article"
+	artcileDir = "../blogarticle"
+	imageDir   = "../blogarticle/static"
+
+	ctimeLength     = 10
+	titleStartIndex = 11
 )
 
 type ArticleLogic interface {
 	ListArticles(c *gin.Context)
 	GetArticle(c *gin.Context)
+	GetImage(c *gin.Context)
 }
 
 func NewArticleLogic() ArticleLogic {
@@ -56,7 +63,7 @@ func (a *articleLogicImpl) GetArticle(c *gin.Context) {
 
 	var file fs.DirEntry
 	for _, entry := range fileEntries {
-		if entry.Name() == req.Title {
+		if a.getTitleFromFileName(entry.Name()) == req.Title {
 			file = entry
 		}
 	}
@@ -85,7 +92,8 @@ func (a *articleLogicImpl) readFileEntries() ([]fs.DirEntry, error) {
 		return nil, err
 	}
 	var res []fs.DirEntry
-	for _, fileEntry := range fileEntries {
+	for i := len(fileEntries) - 1; i >= 0; i-- {
+		fileEntry := fileEntries[i]
 		if fileEntry.IsDir() {
 			continue
 		}
@@ -106,10 +114,26 @@ func (a *articleLogicImpl) convertToArticleEntries(fileEntries []fs.DirEntry) []
 	var res []*articleEntry
 	for _, fileEntry := range fileEntries {
 		res = append(res, &articleEntry{
-			Title: fileEntry.Name(),
+			Title: a.getTitleFromFileName(fileEntry.Name()),
+			CTime: a.getCTimeFromFileName(fileEntry.Name()),
 		})
 	}
 	return res
+}
+
+func (a *articleLogicImpl) getTitleFromFileName(name string) string {
+	if len(name) < titleStartIndex {
+		return name
+	}
+	// remove time prefix and .md postfix
+	return name[titleStartIndex : len(name)-3]
+}
+
+func (a *articleLogicImpl) getCTimeFromFileName(name string) string {
+	if len(name) < ctimeLength {
+		return name
+	}
+	return name[:ctimeLength]
 }
 
 func (a *articleLogicImpl) getArticleFromDisk(file fs.DirEntry) (*article, error) {
@@ -118,7 +142,50 @@ func (a *articleLogicImpl) getArticleFromDisk(file fs.DirEntry) (*article, error
 		return nil, err
 	}
 	return &article{
-		Title:   file.Name(),
+		Title:   a.getTitleFromFileName(file.Name()),
+		CTime:   a.getCTimeFromFileName(file.Name()),
 		Content: string(contentBytes),
 	}, nil
+}
+
+func (a *articleLogicImpl) GetImage(c *gin.Context) {
+	var req getImageReq
+	if err := c.BindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	imagePath := filepath.Join(imageDir, req.Image) // Assuming imageDir is defined elsewhere
+
+	// Read the image file
+	imageData, err := os.ReadFile(imagePath)
+	if err != nil {
+		a.buildErrorResp(c, http.StatusInternalServerError, err)
+		return
+	}
+
+	// Determine content type based on file extension
+	contentType := getImageContentType(imagePath)
+
+	// Set the appropriate Content-Type header
+	c.Header("Content-Type", contentType)
+
+	// Send the image data as response
+	c.Data(http.StatusOK, contentType, imageData)
+}
+
+// Function to get content type based on file extension
+func getImageContentType(filename string) string {
+	ext := strings.ToLower(filepath.Ext(filename))
+	switch ext {
+	case ".jpg", ".jpeg":
+		return "image/jpeg"
+	case ".png":
+		return "image/png"
+	case ".gif":
+		return "image/gif"
+	// Add more cases as needed for other image formats
+	default:
+		return "application/octet-stream" // Default to binary data if content type is unknown
+	}
 }
