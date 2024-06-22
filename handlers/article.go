@@ -122,11 +122,12 @@ func (a *articleLogicImpl) convertToArticleEntries(fileEntries []fs.DirEntry) []
 }
 
 func (a *articleLogicImpl) getTitleFromFileName(name string) string {
+	extLen := len(filepath.Ext(name))
 	if len(name) < titleStartIndex {
 		return name
 	}
-	// remove time prefix and .md postfix
-	return name[titleStartIndex : len(name)-3]
+	// remove time prefix and extension suffix
+	return name[titleStartIndex : len(name)-extLen]
 }
 
 func (a *articleLogicImpl) getCTimeFromFileName(name string) string {
