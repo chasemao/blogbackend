@@ -13,9 +13,6 @@ import (
 )
 
 const (
-	artcileDir = "../blogarticle"
-	imageDir   = "../blogarticle/static"
-
 	ctimeLength     = 10
 	titleStartIndex = 11
 )
@@ -87,7 +84,7 @@ func (a *articleLogicImpl) GetArticle(c *gin.Context) {
 }
 
 func (a *articleLogicImpl) readFileEntries() ([]fs.DirEntry, error) {
-	fileEntries, err := os.ReadDir(artcileDir)
+	fileEntries, err := os.ReadDir(getArticleDir())
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +135,7 @@ func (a *articleLogicImpl) getCTimeFromFileName(name string) string {
 }
 
 func (a *articleLogicImpl) getArticleFromDisk(file fs.DirEntry) (*article, error) {
-	contentBytes, err := os.ReadFile(artcileDir + "/" + file.Name())
+	contentBytes, err := os.ReadFile(getArticleDir() + "/" + file.Name())
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +153,7 @@ func (a *articleLogicImpl) GetImage(c *gin.Context) {
 		return
 	}
 
-	imagePath := filepath.Join(imageDir, req.Image) // Assuming imageDir is defined elsewhere
+	imagePath := filepath.Join(getImageDir(), req.Image)
 
 	// Read the image file
 	imageData, err := os.ReadFile(imagePath)

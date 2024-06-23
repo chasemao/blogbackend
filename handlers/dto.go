@@ -41,3 +41,20 @@ type getArticleResp struct {
 type getImageReq struct {
 	Image string `json:"image"`
 }
+
+var (
+	artcileDir  = "../blogarticle"
+	imageSubDir = "/static"
+)
+
+func SetArticleDic(dir string) {
+	artcileDir = dir
+}
+
+func getArticleDir() string {
+	return artcileDir
+}
+
+func getImageDir() string {
+	return artcileDir + imageSubDir
+}
