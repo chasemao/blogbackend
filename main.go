@@ -19,5 +19,4 @@ func main() {
 	routers.RegisterUserRoutes(router)
 	// 启动Gin服务器
 	router.Run("localhost:6666")
-
 }
